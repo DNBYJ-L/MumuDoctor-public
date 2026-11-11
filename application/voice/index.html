@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body {
+    margin: 0; padding: 0; background: transparent; overflow: hidden;
+  }
+  * { box-sizing: border-box; }
+
+  /* 圆形语音按钮：高度由外层 iframe 控制，始终和「发送」等高 */
+  #mic {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #EAF1EC;
+    color: #1C5B4A;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  #mic:hover { background: #DCE7DF; }
+  #mic:active { transform: scale(0.96); }
+  #mic:focus-visible { outline: 2px solid #1C5B4A; outline-offset: 2px; }
+  #mic svg { width: 20px; height: 20px; display: block; pointer-events: none; }
+
+  /* 正在听：红底白图标 + 一圈扩散的提示 */
+  #mic.rec { background: #9E3524; color: #FFFFFF; }
+  #mic.rec::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(158, 53, 36, 0.6);
+    animation: ring 1.2s ease-out infinite;
+  }
+  #mic.rec svg { animation: breathe 1.2s ease-in-out infinite; }
+
+  @keyframes ring { 0% { transform: scale(1); opacity: 0.9; } 100% { transform: scale(1.32); opacity: 0; } }
+  @keyframes breathe { 0%, 100% { opacity: 1; } 50% { opacity: 0.65; } }
+  @media (prefers-reduced-motion: reduce) {
+    #mic.rec::after, #mic.rec svg { animation: none; }
+  }
+</style>
+</head>
+<body>
+<button id="mic" type="button" aria-label="语音输入" title="语音输入：点一下开始说话">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+       stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <path d="M12 2a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z" />
+    <path d="M19 10v1a7 7 0 0 1-14 0v-1" />
+    <line x1="12" y1="18" x2="12" y2="22" />
+    <line x1="8" y1="22" x2="16" y2="22" />
+  </svg>
+</button>
+
+<script>
+(function () {
+  var btn = document.getElementById("mic");
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  var rec = null;
+  var listening = false;
+  var finalText = "";
+
+  var bubble = null;
+  var hideTimer = null;
+  var placeHandler = null;
+
+  function post(type, extra) {
+    var m = { isStreamlitMessage: true, type: type };
+    if (extra) {
+      for (var k in extra) {
+        if (Object.prototype.hasOwnProperty.call(extra, k)) { m[k] = extra[k]; }
+      }
+    }
+    window.parent.postMessage(m, "*");
+  }
+
+  // 组件自带的高度只有「一个按钮」那么高，状态提示浮在页面上一层显示
+  post("streamlit:componentReady", { apiVersion: 1 });
+  post("streamlit:setFrameHeight", { height: 40 });
+
+  function parentDoc() {
+    try {
+      if (window.parent && window.parent !== window && window.parent.document) {
+        return window.parent.document;
+      }
+    } catch (e) { /* 跨域时拿不到 */ }
+    return null;
+  }
+
+  function placeBubble() {
+    if (!bubble) { return; }
+    var frame = window.frameElement;
+    if (!frame) { return; }
+    var r = frame.getBoundingClientRect();
+    bubble.style.left = (r.left + r.width / 2) + "px";
+    bubble.style.top = (r.top - 8) + "px";
+  }
+
+  function showBubble(text, sticky) {
+    var doc = parentDoc();
+    if (!doc) { return; }
+    if (!bubble || !bubble.isConnected) {
+      bubble = doc.createElement("div");
+      bubble.id = "mumu-voice-tip";
+      bubble.setAttribute("role", "status");
+      bubble.style.cssText = [
+        "position:fixed",
+        "z-index:2147483000",
+        "pointer-events:none",
+        "max-width:280px",
+        "padding:8px 14px",
+        "border-radius:999px",
+        "background:rgba(27,27,24,.92)",
+        "color:#fff",
+        'font:13px/1.5 "PingFang SC","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif',
+        "letter-spacing:.01em",
+        "text-align:center",
+        "box-shadow:0 10px 26px -16px rgba(0,0,0,.7)",
+        "transform:translate(-50%,-100%)"
+      ].join(";");
+      doc.body.appendChild(bubble);
+    }
+    placeBubble();
+    if (!placeHandler) {
+      placeHandler = placeBubble;
+      window.addEventListener("resize", placeHandler);
+      doc.addEventListener("scroll", placeHandler, true);
+    }
+    bubble.textContent = text;
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+    if (!sticky) {
+      hideTimer = setTimeout(hideBubble, 5000);
+    }
+  }
+
+  function hideBubble() {
+    if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+    if (bubble && bubble.parentNode) { bubble.parentNode.removeChild(bubble); }
+    bubble = null;
+    var doc = parentDoc();
+    if (placeHandler) {
+      window.removeEventListener("resize", placeHandler);
+      if (doc) { doc.removeEventListener("scroll", placeHandler, true); }
+      placeHandler = null;
+    }
+  }
+
+  function setListening(on) {
+    listening = on;
+    btn.classList.toggle("rec", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.title = on ? "正在听，点一下停止" : "语音输入：点一下开始说话";
+  }
+
+  // 把识别结果写进对话输入框：走原生 setter + input 事件，React 才收得到
+  function fillComposer(text) {
+    var doc = parentDoc();
+    if (!doc) { return false; }
+    var input = doc.querySelector(".st-key-chat-composer-text input")
+      || doc.querySelector('.st-key-composer [data-testid="stTextInputField"]');
+    if (!input) { return false; }
+    var prev = input.value || "";
+    var joined = prev.replace(/\s+$/, "");
+    joined = joined ? joined + " " + text : text;
+    try {
+      var view = doc.defaultView || window.parent;
+      var desc = Object.getOwnPropertyDescriptor(view.HTMLInputElement.prototype, "value");
+      input.focus();
+      desc.set.call(input, joined);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      input.setSelectionRange(joined.length, joined.length);
+    } catch (e) {
+      return false;
+    }
+    return input.value === joined;
+  }
+
+  function errorText(code) {
+    var map = {
+      "not-allowed": "麦克风权限被拒绝，请允许浏览器使用麦克风后再点一次。",
+      "service-not-allowed": "麦克风权限被拒绝，请允许浏览器使用麦克风后再点一次。",
+      "audio-capture": "没有找到麦克风，检查一下设备再试。",
+      "network": "语音识别连不上网（Chrome 需要联网识别），可以改用键盘输入。",
+      "no-speech": "没有听到声音，再点一次试试。",
+      "language-not-supported": "这个浏览器不支持中文语音识别，请改用键盘输入。"
+    };
+    return map[code] || "语音识别没成功，可以改用键盘输入。";
+  }
+
+  function stopRec() {
+    if (rec) {
+      try { rec.stop(); } catch (e) { /* 已经停了 */ }
+    }
+  }
+
+  function start() {
+    if (!SR) {
+      showBubble("这个浏览器不支持语音输入，请用 Chrome / Edge / Safari，或直接打字。", false);
+      return;
+    }
+    if (listening) { stopRec(); return; }
+
+    finalText = "";
+    rec = new SR();
+    rec.lang = "zh-CN";
+    rec.continuous = false;
+    rec.interimResults = true;
+    rec.maxAlternatives = 1;
+
+    rec.onstart = function () {
+      setListening(true);
+      showBubble("正在听，请说话…", true);
+    };
+    rec.onresult = function (event) {
+      var interim = "";
+      for (var i = event.resultIndex; i < event.results.length; i++) {
+        var result = event.results[i];
+        if (result.isFinal) { finalText += result[0].transcript; }
+        else { interim += result[0].transcript; }
+      }
+      var shown = (finalText + interim).replace(/\s+/g, " ").trim();
+      if (shown) { showBubble(shown, true); }
+    };
+    rec.onerror = function (event) {
+      var code = (event && event.error) || "";
+      if (code === "aborted") { return; }
+      setListening(false);
+      showBubble(errorText(code), false);
+    };
+    rec.onend = function () {
+      setListening(false);
+      var text = finalText.replace(/\s+/g, " ").trim();
+      if (!text) { return; }
+      if (fillComposer(text)) {
+        showBubble("已填进输入框，点「发送」即可。", false);
+      } else {
+        showBubble("没能自动填写输入框，请把语音内容用键盘输入。", false);
+      }
+    };
+
+    try {
+      rec.start();
+    } catch (e) {
+      setListening(false);
+      showBubble("没能启动语音识别，再点一次试试。", false);
+    }
+  }
+
+  btn.addEventListener("click", start);
+
+  // 组件被卸载时（切页面 / 退登录）把浮层一起收走，别留在页面上
+  setInterval(function () {
+    if (!window.frameElement) { hideBubble(); }
+  }, 1000);
+
+  window.addEventListener("pagehide", function () {
+    stopRec();
+    hideBubble();
+  });
+})();
+</script>
+</body>
+</html>

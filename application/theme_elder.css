@@ -1,0 +1,531 @@
+/* ============================================================
+   老人模式 · 在 theme.css 之后加载
+   只做三件事：字号加大、行距放宽、点按目标变大。
+   同优先级下后加载者生效，所以这里不用 !important 去硬顶基础样式。
+   ============================================================ */
+
+/* Streamlit 自带的 rem 尺寸（控件内边距、图标）跟着根字号一起放大 */
+html {
+  font-size: 17.5px;
+}
+
+[data-testid="stMainBlockContainer"] {
+  max-width: 780px;
+  padding: 1.2rem 1.5rem 8.5rem;
+}
+
+/* ---------- 返回：老人模式下也要够得着 ---------- */
+
+[class*="st-key-back-"] button,
+[class*="st-key-back-"] button p {
+  min-height: 44px;
+  font-size: 16px;
+}
+
+[class*="st-key-back-"] {
+  margin: 0.2rem 0 0.2rem;
+}
+
+/* ---------- 顶栏 ---------- */
+
+.st-key-avatar-btn button {
+  width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+}
+
+.st-key-avatar-btn button p {
+  font-size: 19px;
+}
+
+.brand-name {
+  font-size: 20px;
+}
+
+.brand-role {
+  font-size: 13px;
+  letter-spacing: 0.1em;
+}
+
+.status {
+  font-size: 12.5px;
+}
+
+.st-key-settings-menu [data-testid="stPopoverButton"] {
+  min-height: 42px;
+  padding: 0 0.95rem;
+}
+
+.st-key-settings-menu [data-testid="stPopoverButton"] p {
+  font-size: 15px;
+}
+
+/* ---------- 开屏 ---------- */
+
+.hero {
+  padding-left: 1.5rem;
+  margin: 2.2rem 0 0.8rem;
+}
+
+.eyebrow {
+  font-size: 12.5px;
+  letter-spacing: 0.18em;
+}
+
+.hero h1.hero-title {
+  font-size: clamp(24px, 6vw, 33px) !important;
+  line-height: 1.45 !important;
+}
+
+.hero-sub {
+  font-size: 17px;
+  line-height: 2;
+}
+
+.rule-label,
+.followup-label {
+  font-size: 12.5px;
+}
+
+/* 开屏示例：每条更高更好点 */
+.st-key-suggestions .stButton > button,
+.st-key-suggestions [data-testid^="stBaseButton"] {
+  min-height: 66px;
+  padding: 1.05rem 0.3rem;
+}
+
+.st-key-suggestions .stButton > button p,
+.st-key-suggestions [data-testid^="stBaseButton"] p {
+  font-size: 17.5px;
+  line-height: 1.6;
+}
+
+/* ---------- 对话消息 ---------- */
+
+[data-testid="stChatMessage"] p {
+  font-size: 18px;
+  line-height: 2.05;
+}
+
+[data-testid="stChatMessage"] li {
+  font-size: 18px;
+  line-height: 2;
+}
+
+[data-testid="stChatMessage"] h1,
+[data-testid="stChatMessage"] h2,
+[data-testid="stChatMessage"] h3 {
+  font-size: 20px;
+}
+
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {
+  padding: 0.8rem 1.15rem;
+}
+
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] p {
+  line-height: 1.85;
+}
+
+.redline-flag {
+  font-size: 13px;
+  padding: 0.4rem 0.85rem;
+}
+
+/* 环境条：字号跟着放大，按钮够得着 */
+.st-key-envbar .envbar {
+  font-size: 15px;
+}
+
+.st-key-envbar .envbar-empty {
+  font-size: 14.5px;
+}
+
+.st-key-envbar [data-testid="stPopoverButton"] {
+  min-height: 40px;
+}
+
+.env-note {
+  font-size: 13px;
+}
+
+/* 追问：药丸改成能换行的高按钮 */
+[class*="st-key-followup-"] .stButton > button,
+[class*="st-key-followup-"] [data-testid^="stBaseButton"] {
+  min-height: 46px;
+  padding: 0.45rem 1.15rem;
+  font-size: 16px;
+  white-space: normal;
+  text-align: left;
+}
+
+/* 老人模式下每轮回答的两个大按钮：朗读 / 附近医院 */
+[class*="st-key-elder-actions-"] [data-testid="stHorizontalBlock"] {
+  gap: 0.6rem;
+  align-items: stretch;
+}
+
+[class*="st-key-elder-actions-"] .stButton > button {
+  min-height: 48px;
+  border-radius: 12px;
+  font-size: 16px;
+}
+
+/* ---------- 输入区 ---------- */
+
+[data-testid="stChatInput"] {
+  border-width: 1.5px;
+  border-radius: 16px;
+}
+
+[data-testid="stChatInputTextArea"] {
+  font-size: 17.5px;
+  line-height: 1.75;
+}
+
+.compliance {
+  font-size: 12.5px;
+  line-height: 1.9;
+}
+
+/* ---------- 设置面板 ---------- */
+
+[data-testid="stPopoverBody"] {
+  min-width: 17rem;
+  padding: 0.9rem 0.95rem;
+}
+
+[data-testid="stPopoverBody"] [data-testid="stWidgetLabel"] p,
+[data-testid="stPopoverBody"] label p {
+  font-size: 15px;
+}
+
+[data-testid="stSlider"] label,
+[data-testid="stSelectbox"] label,
+[data-testid="stRadio"] label {
+  font-size: 14.5px;
+}
+
+[data-testid="stPopoverBody"] .stButton > button {
+  min-height: 44px;
+  font-size: 14.5px;
+}
+
+[data-testid="stCaptionContainer"] p {
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+/* 老人模式开关：轨道和圆钮都放大一点。
+   Streamlit 的开关和复选框共用 stCheckbox，找不到目标元素时这几条自动失效，不影响其它样式。 */
+[data-testid="stCheckbox"] [data-testid="stWidgetLabel"] p {
+  font-size: 15.5px;
+}
+
+[data-testid="stCheckbox"] > label > div:nth-of-type(1) {
+  zoom: 1.2;
+}
+
+/* ---------- 自查表单与报告 ---------- */
+
+[data-testid="stForm"] {
+  padding: 1.2rem 1.35rem 1.35rem;
+}
+
+[data-testid="stForm"] label p {
+  font-size: 14px;
+}
+
+[data-testid="stNumberInput"] input,
+[data-testid="stTimeInput"] input {
+  font-size: 17px;
+  padding: 0.6rem 0.8rem;
+}
+
+[data-testid="stForm"] [data-baseweb="select"] > div {
+  font-size: 16px;
+  min-height: 48px;
+}
+
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] button {
+  min-height: 54px;
+  font-size: 16.5px;
+}
+
+/* 老人模式发送键更高，语音键跟着长到同高，仍然紧贴 */
+.st-key-send-group > [data-testid="stElementContainer"]:has(.st-key-voice-slot) {
+  flex-basis: 54px;
+  width: 54px;
+  min-width: 54px;
+}
+
+.st-key-voice-slot,
+.st-key-voice-slot > [data-testid="stElementContainer"] {
+  width: 54px;
+  height: 54px;
+}
+
+.st-key-voice-slot iframe {
+  width: 54px !important;
+  height: 54px !important;
+}
+
+.form-section {
+  font-size: 12.5px;
+}
+
+.check-banner {
+  padding: 1rem 1.15rem;
+}
+
+.check-banner-label {
+  font-size: 12.5px;
+}
+
+.check-banner-value {
+  font-size: 21px;
+}
+
+.check-table th {
+  font-size: 12.5px;
+  padding: 0.65rem 0.45rem;
+}
+
+.check-table td {
+  font-size: 16px;
+  padding: 0.75rem 0.45rem;
+}
+
+.check-table td.num {
+  font-size: 16px;
+}
+
+.check-table td.st {
+  font-size: 14px;
+}
+
+[class*="st-key-check-conclusion"] p {
+  font-size: 17.5px;
+  line-height: 2;
+}
+
+[class*="st-key-check-suggestions"] li {
+  font-size: 17.5px;
+  line-height: 1.95;
+}
+
+.st-key-check-speak {
+  margin: 0.4rem 0 1rem;
+}
+
+/* ---------- 历史对话 ---------- */
+
+.hist-title {
+  font-size: 17px;
+  white-space: normal;
+}
+
+.hist-meta {
+  font-size: 12.5px;
+}
+
+/* ---------- 就近医院 / 就诊流程 ---------- */
+
+.triage-level,
+.h-name,
+.guide-title {
+  font-size: 17px;
+}
+
+.triage-advice,
+.guide-detail,
+.h-meta,
+.h-foot {
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.triage-dept,
+.guide-ask {
+  font-size: 12.5px;
+}
+
+.hospital-card {
+  padding: 0.85rem 1rem;
+}
+
+.ua-name {
+  font-size: 17px;
+}
+
+.ua-value {
+  font-size: 15px;
+}
+
+.ua-ref {
+  font-size: 13px;
+}
+
+.ua-advice {
+  font-size: 15px;
+  line-height: 1.9;
+}
+
+[data-testid="stDialog"] [data-testid="stMarkdownContainer"] p {
+  font-size: 15.5px;
+  line-height: 1.95;
+}
+
+/* ---------- 打卡 / 数据看板 ---------- */
+
+.kpi-label {
+  font-size: 12.5px;
+}
+
+.kpi-value {
+  font-size: 34px;
+}
+
+.kpi-value-date {
+  font-size: 26px;
+}
+
+.kpi-unit,
+.kpi-foot {
+  font-size: 13.5px;
+}
+
+.chart-title {
+  font-size: 21px;
+}
+
+.chart-unit {
+  font-size: 12.5px;
+}
+
+.chart-meta {
+  font-size: 13px;
+}
+
+[class*="st-key-chart-card-"] [data-testid="stWidgetLabel"] p {
+  font-size: 13px;
+}
+
+/* ---------- 窄屏 ---------- */
+
+@media (max-width: 640px) {
+  [data-testid="stMainBlockContainer"] {
+    padding: 0.8rem 1rem 6.5rem;
+  }
+
+  .hero {
+    padding-left: 1rem;
+  }
+
+  .hero-sub {
+    font-size: 16.5px;
+    line-height: 1.95;
+  }
+
+  /* 窄屏下两个大按钮竖排，各自占满整行，更好点 */
+  [class*="st-key-elder-actions-"] [data-testid="stHorizontalBlock"] {
+    flex-direction: column;
+  }
+
+  .check-table td,
+  .check-table td.num {
+    font-size: 15px;
+  }
+}
+
+/* ---------- 对话输入区（文字 + 文件） ---------- */
+
+.st-key-composer input {
+  font-size: 17.5px;
+}
+
+.st-key-composer [data-testid="stTextInputRootElement"] {
+  min-height: 46px;
+}
+
+.st-key-attachbar button {
+  min-height: 40px;
+  font-size: 15px;
+  padding: 0.2rem 0.7rem;
+}
+
+.attach-hint {
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.attach-name {
+  font-size: 14.5px;
+}
+
+.attach-meta {
+  font-size: 12.5px;
+}
+
+.attach-error {
+  font-size: 13px;
+  line-height: 1.8;
+}
+
+.st-key-composer [data-testid="stFileUploaderDropzone"] button p::after {
+  font-size: 15px;
+}
+
+/* ---------- 外壳：老人模式下导航也放大 ---------- */
+
+.st-key-shell-nav .stButton > button,
+.st-key-shell-nav [data-testid^="stBaseButton"] {
+  min-height: 46px;
+}
+
+.st-key-shell-nav .stButton > button p,
+.st-key-shell-nav [data-testid^="stBaseButton"] p {
+  font-size: 15px;
+}
+
+.st-key-shell-nav [data-testid="stIconMaterial"] {
+  font-size: 20px;
+}
+
+.nav-brand-name {
+  font-size: 16px;
+}
+
+.nav-brand-role {
+  font-size: 10.5px;
+}
+
+.nav-group {
+  font-size: 11px;
+}
+
+.page-title {
+  font-size: 22px;
+}
+
+@media (max-width: 640px) {
+  /* 老人模式的输入区更高，底部留白也要跟着加 */
+  [data-testid="stMainBlockContainer"] {
+    padding-bottom: 19rem;
+  }
+
+  /* theme.css 的窄屏压缩针对普通模式；老人模式把输入框和占位文字托回来 */
+  .st-key-composer [data-testid="stTextInputRootElement"],
+  .st-key-composer [data-baseweb="input"],
+  .st-key-composer [data-baseweb="base-input"] {
+    min-height: 46px;
+  }
+
+  .st-key-composer input {
+    height: 46px;
+    min-height: 46px;
+  }
+
+  .st-key-composer input::placeholder {
+    font-size: 15px;
+  }
+}

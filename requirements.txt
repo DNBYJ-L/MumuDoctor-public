@@ -1,0 +1,15 @@
+streamlit>=1.66.0,<2.0.0
+altair>=5.0.0,<7.0.0
+pandas>=2.0.0,<4.0.0
+numpy>=1.26.0,<3.0.0
+requests>=2.25.0,<3.0.0
+PyMySQL>=1.1.0,<2.0.0
+# 对话文件解析（PDF / Excel）；Word 走标准库，图片 OCR 用系统 tesseract
+pypdf>=5.0.0,<7.0.0
+openpyxl>=3.1.0,<4.0.0
+Pillow>=10.0.0,<13.0.0
+# 药盒识图：iPhone 默认拍 HEIC，装上后才能直接读（没装会提示转 JPG）
+pillow-heif>=0.18.0,<2.0.0
+# 药盒识图首选 OCR：PP-OCR 模型（CPU），对竖排大字 / 彩色包装 / 照片反光比 tesseract 稳；
+# 没装时自动退回 tesseract。opencv 依赖系统 libGL，服务器需 apt install -y libgl1。
+rapidocr-onnxruntime>=1.2.3,<2.0.0

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  html, body {
+    margin: 0; padding: 0; background: transparent; overflow: hidden;
+    font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  }
+
+  /* 朗读按钮：默认模式下跟反馈那排小字一样弱，老人模式下换成大按钮 */
+  #btn {
+    width: 100%;
+    box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 28px; padding: 0 10px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-bottom: 1px solid transparent;
+    border-radius: 0;
+    color: #85857A;
+    font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+    font-size: 11px; letter-spacing: 0.06em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+
+  #btn:hover { color: #1C5B4A; border-bottom-color: #1C5B4A; }
+  #btn:focus-visible { outline: 2px solid #1C5B4A; outline-offset: 2px; }
+
+  #btn.big {
+    min-height: 48px; padding: 0 14px;
+    border: 1px solid #CFC9B8; border-radius: 12px;
+    color: #1C5B4A;
+    font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+    font-size: 16px; letter-spacing: 0.02em;
+  }
+
+  #btn.big:hover { background: #EAF1EC; border-color: #1C5B4A; }
+
+  /* 正在读的时候反色，让人一眼看出「再点一下是停」 */
+  #btn.on { background: #1C5B4A; border-color: #1C5B4A; color: #FFFFFF; }
+  #btn.on:hover { background: #2F7A63; border-color: #2F7A63; color: #FFFFFF; }
+
+  #note {
+    margin: 4px 0 0; padding: 0;
+    font-size: 11px; line-height: 1.5; color: #9E3524;
+  }
+  #note:empty { display: none; }
+  #note.big { font-size: 13px; }
+</style>
+</head>
+<body>
+  <button id="btn" type="button">🔊 朗读</button>
+  <div id="note"></div>
+
+<script>
+(function () {
+  var btn = document.getElementById("btn");
+  var note = document.getElementById("note");
+
+  var text = "";
+  var label = "朗读";
+  var big = false;
+  var rate = 1;
+
+  var playing = false;
+  var queue = [];
+  var cursor = 0;
+  var voice = null;
+
+  var synth = window.speechSynthesis || null;
+  var Utterance = window.SpeechSynthesisUtterance || null;
+
+  function post(type, extra) {
+    var m = { isStreamlitMessage: true, type: type };
+    if (extra) { for (var k in extra) { if (extra.hasOwnProperty(k)) { m[k] = extra[k]; } } }
+    window.parent.postMessage(m, "*");
+  }
+
+  function syncHeight() {
+    requestAnimationFrame(function () {
+      var extra = note.textContent ? note.offsetHeight + 4 : 0;
+      // 小按钮要和旁边那排等宽小字对齐（它们高 28px），所以不再额外加边距
+      post("streamlit:setFrameHeight", { height: Math.ceil(btn.offsetHeight + extra) });
+    });
+  }
+
+  // 朗读前把 Markdown 记号抹掉，读出来才是人话
+  function plain(md) {
+    var s = String(md == null ? "" : md);
+    s = s.replace(/```[\s\S]*?```/g, " ");
+    s = s.replace(/!\[[^\]]*\]\([^)]*\)/g, " ");
+    s = s.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+    s = s.replace(/^\s{0,3}#{1,6}\s*/gm, "");
+    s = s.replace(/^\s{0,3}[-*+]\s+/gm, "");
+    s = s.replace(/^\s{0,3}\d+[.)]\s+/gm, "");
+    s = s.replace(/[*_`~>]/g, "");
+    s = s.replace(/\|/g, " ");
+    s = s.replace(/[ \t]+/g, " ");
+    s = s.replace(/[ \t]*\n[ \t]*/g, "\n");
+    s = s.replace(/\n{3,}/g, "\n\n");
+    return s.replace(/^\s+|\s+$/g, "");
+  }
+
+  // 一条 utterance 太长时，Chrome 会在 15 秒左右截断；
+  // 按句号切成小块排队播，长回答也能从头读到尾。
+  function split(s) {
+    var out = [];
+    var buf = "";
+    var marks = "。！？；…!?;\n";
+    for (var i = 0; i < s.length; i++) {
+      var ch = s.charAt(i);
+      buf += ch;
+      if (buf.length >= 120) { out.push(buf); buf = ""; }
+      else if (buf.length >= 36 && marks.indexOf(ch) >= 0) { out.push(buf); buf = ""; }
+    }
+    if (buf.replace(/^\s+|\s+$/g, "")) { out.push(buf); }
+    return out;
+  }
+
+  function pickVoice() {
+    if (!synth || !synth.getVoices) { return null; }
+    var list = synth.getVoices() || [];
+    var zh = [];
+    for (var i = 0; i < list.length; i++) {
+      if (/^zh/i.test(list[i].lang || "")) { zh.push(list[i]); }
+    }
+    if (zh.length) {
+      // 简体中文优先，找不到再退回第一个中文音色
+      for (var j = 0; j < zh.length; j++) {
+        if (/[-_]CN$/i.test(zh[j].lang || "")) { voice = zh[j]; return voice; }
+      }
+      voice = zh[0];
+      return voice;
+    }
+    for (var k = 0; k < list.length; k++) {
+      if (/Chinese|中文|Mandarin/i.test(list[k].name || "")) { voice = list[k]; return voice; }
+    }
+    voice = null;
+    return null;
+  }
+
+  function paint() {
+    btn.className = (big ? "big" : "") + (playing ? " on" : "");
+    note.className = big ? "big" : "";
+    // 小尺寸就是那排等宽小字里的一员，不加图标；老人模式才挂个喇叭
+    btn.textContent = playing ? "◼ 停止" : big ? "🔊 " + label : label;
+    btn.setAttribute("aria-label", playing ? "停止朗读" : "朗读这段话");
+    syncHeight();
+  }
+
+  function fail(message) {
+    playing = false;
+    queue = [];
+    cursor = 0;
+    note.textContent = message;
+    paint();
+  }
+
+  function speakNext() {
+    if (!playing) { return; }
+    if (cursor >= queue.length) {
+      playing = false;
+      note.textContent = "";
+      paint();
+      return;
+    }
+    var utterance = new Utterance(queue[cursor]);
+    utterance.lang = "zh-CN";
+    if (voice) { utterance.voice = voice; }
+    utterance.rate = rate;
+    utterance.pitch = 1;
+    utterance.onend = function () {
+      if (!playing) { return; }
+      cursor += 1;
+      speakNext();
+    };
+    utterance.onerror = function (e) {
+      var why = (e && e.error) || "";
+      if (why === "interrupted" || why === "canceled") { return; }
+      fail("这台设备的朗读没成功，可以换个浏览器再试试。");
+    };
+    try {
+      synth.speak(utterance);
+    } catch (e) {
+      fail("这台设备的朗读没成功，可以换个浏览器再试试。");
+    }
+  }
+
+  function start() {
+    note.textContent = "";
+    var body = plain(text);
+    if (!body) { fail("这段内容还没生成好，等回答出来再点。"); return; }
+    if (!synth || !Utterance) {
+      fail("当前浏览器不支持朗读，建议用 Chrome、Edge 或 Safari 打开。");
+      return;
+    }
+    try { synth.cancel(); } catch (e) { /* 有的浏览器在未开播时 cancel 会抛错 */ }
+    pickVoice();
+    queue = split(body);
+    cursor = 0;
+    playing = true;
+    speakNext();
+    paint();
+  }
+
+  function stop() {
+    playing = false;
+    queue = [];
+    cursor = 0;
+    try { if (synth) { synth.cancel(); } } catch (e) { /* 同上 */ }
+    paint();
+  }
+
+  btn.addEventListener("click", function () {
+    if (playing) { stop(); } else { start(); }
+  });
+
+  // 音色列表是异步加载的，加载完再挑一次中文音色
+  if (synth) {
+    pickVoice();
+    if (typeof synth.addEventListener === "function") {
+      synth.addEventListener("voiceschanged", pickVoice);
+    } else {
+      synth.onvoiceschanged = pickVoice;
+    }
+  }
+
+  // 页面切走或组件被卸载时别让声音继续念
+  window.addEventListener("pagehide", stop);
+  window.addEventListener("unload", function () {
+    playing = false;
+    try { if (synth) { synth.cancel(); } } catch (e) { /* 卸载阶段忽略 */ }
+  });
+
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || d.type !== "streamlit:render") { return; }
+    var args = d.args || {};
+
+    var nextText = args.text == null ? "" : String(args.text);
+    // 内容换了就别接着读旧的
+    if (playing && nextText !== text) { stop(); }
+    text = nextText;
+    label = args.label ? String(args.label) : "朗读";
+    big = !!args.big;
+    rate = Number(args.rate) > 0 ? Number(args.rate) : 1;
+
+    paint();
+  });
+
+  post("streamlit:componentReady", { apiVersion: 1 });
+  post("streamlit:setFrameHeight", { height: 30 });
+})();
+</script>
+</body>
+</html>

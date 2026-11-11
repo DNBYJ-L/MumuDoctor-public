@@ -1,0 +1,2354 @@
+/* ============================================================
+   木木医生 · 纸与墨
+   暖纸底 / 墨色字 / 松绿点缀 / 衬线标题 / 等宽编号
+   发丝线分层级，不用阴影堆层次，不用渐变造氛围。
+   ============================================================ */
+
+:root {
+  --paper: #FBFAF6;
+  --paper-2: #F4F2EA;
+  --surface: #FFFFFF;
+  --ink: #1B1B18;
+  --ink-2: #3E3E38;
+  --muted: #85857A;
+  --line: #E5E1D5;
+  --line-strong: #CFC9B8;
+  --accent: #1C5B4A;
+  --accent-2: #2F7A63;
+  --accent-soft: #EAF1EC;
+  --danger: #9E3524;
+  --danger-bg: #F8EDE8;
+
+  --serif: "Noto Serif SC", "Songti SC", "Source Han Serif SC", "STSong", serif;
+  --sans: "PingFang SC", "Noto Sans SC", "Source Han Sans SC", "Microsoft YaHei",
+    system-ui, -apple-system, sans-serif;
+  --mono: "JetBrains Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+/* ---------- 纸面 ---------- */
+
+html,
+body,
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"] {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+html,
+body,
+.stApp,
+button,
+input,
+textarea,
+[data-testid="stMarkdownContainer"] {
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 极淡的纸纹，去掉这一层就是纯色 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection {
+  background: #DCE7DF;
+  color: var(--ink);
+}
+
+/* 隐藏 Streamlit 外壳 */
+[data-testid="stHeader"],
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+#MainMenu,
+footer {
+  display: none !important;
+}
+
+[data-testid="stMainBlockContainer"] {
+  max-width: 720px;
+  padding: 1.1rem 1.25rem 9rem;
+}
+
+/* ---------- 顶栏 ---------- */
+
+.st-key-topbar {
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: -0.35rem;
+}
+
+/* 品牌块吃掉剩余宽度；窄屏时由 role 的省略号收尾，不换行、不撑高 */
+.st-key-topbar > div[data-testid="stElementContainer"]:has(.brand) {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+.brand {
+  min-width: 0;
+}
+
+.brand-line {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.brand-name {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.25;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.brand-role {
+  margin-top: 2px;
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot.on { background: var(--accent-2); }
+.dot.off { background: var(--danger); }
+
+.header-rule {
+  height: 1px;
+  background: var(--line);
+  margin: 0.55rem 0 0;
+}
+
+/* 头像按钮：收成圆形印章，点它弹出功能菜单 */
+.st-key-avatar-btn button {
+  width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  border: 1px solid var(--line-strong) !important;
+  background: transparent !important;
+  color: var(--accent) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.st-key-avatar-btn button:hover {
+  border-color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+}
+
+/* Streamlit 按钮内部的 markdown 自带 1.6 倍行高，行盒比字高，
+   字形会整体往下坠；压成 1 倍行高再居中，字才真正在圆心里。 */
+.st-key-avatar-btn button .stMarkdownEllipsis,
+.st-key-avatar-btn button [data-testid="stMarkdownContainer"] {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  font-size: 15px !important;
+}
+
+.st-key-avatar-btn button p {
+  margin: 0;
+  padding: 0;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* 设置：顶栏右侧的低调小按钮 */
+.st-key-settings-menu [data-testid="stPopoverButton"] {
+  min-height: 32px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  letter-spacing: 0.05em;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.st-key-settings-menu [data-testid="stPopoverButton"]:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.st-key-settings-menu [data-testid="stPopoverButton"] p {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.st-key-settings-menu [data-testid="stPopoverButton"] [data-testid="stIconMaterial"] {
+  display: none;
+}
+
+/* ---------- 头像弹出的功能菜单 ---------- */
+
+.menu-rule {
+  height: 1px;
+  background: var(--line);
+  margin: 0.4rem 0;
+}
+
+.st-key-view-menu [data-testid="stVerticalBlock"] {
+  gap: 0.15rem;
+}
+
+.st-key-view-menu .stButton > button,
+.st-key-view-menu [data-testid^="stBaseButton"] {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 38px;
+  padding: 0.3rem 0.6rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-align: left;
+}
+
+.st-key-view-menu .stButton > button > div,
+.st-key-view-menu [data-testid^="stBaseButton"] > div {
+  justify-content: flex-start !important;
+}
+
+.st-key-view-menu .stButton > button p,
+.st-key-view-menu [data-testid^="stBaseButton"] p {
+  margin: 0;
+  font-size: 14px;
+  text-align: left;
+}
+
+.st-key-view-menu .stButton > button:hover,
+.st-key-view-menu [data-testid^="stBaseButton"]:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.st-key-view-menu [data-testid="stBaseButton-primary"] {
+  background: var(--accent) !important;
+  color: #fff !important;
+}
+
+.st-key-view-menu [data-testid="stBaseButton-primary"] p {
+  color: #fff !important;
+}
+
+.st-key-view-menu [data-testid="stBaseButton-primary"]:hover {
+  background: var(--accent-2) !important;
+  color: #fff !important;
+}
+
+
+/* ---------- 空状态 ---------- */
+
+.hero {
+  border-left: 2px solid var(--accent);
+  padding: 0.15rem 0 0.15rem 1.35rem;
+  margin: 2.4rem 0 0.6rem;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+}
+
+.eyebrow-num {
+  font-family: var(--mono);
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0;
+}
+
+.eyebrow-sep {
+  width: 18px;
+  height: 1px;
+  background: var(--line-strong);
+}
+
+/* Streamlit 自带的 markdown h1 规则特异性更高（容器选择器 + h1），
+   普通 .hero-title 会被它覆盖成 2.75rem。这里提到元素级并加 !important。 */
+.hero h1.hero-title {
+  font-family: var(--serif);
+  font-size: clamp(18px, 5.4vw, 28px) !important;
+  font-weight: 600;
+  line-height: 1.35 !important;
+  letter-spacing: 0.015em;
+  color: var(--ink);
+  margin: 0.8rem 0 0.7rem;
+}
+
+.hero-sub {
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--ink-2);
+  max-width: 33em;
+  margin: 0;
+}
+
+/* ---------- 小节标签（两侧发丝线） ---------- */
+
+.rule-label {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin: 2.2rem 0 0.2rem;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+.rule-label::before,
+.rule-label::after {
+  content: "";
+  height: 1px;
+  background: var(--line);
+  flex: 1 1 auto;
+}
+
+/* ---------- 建议问题：编号索引行 ---------- */
+
+.st-key-suggestions {
+  gap: 0;
+}
+
+.st-key-suggestions [data-testid="stVerticalBlock"] {
+  gap: 0;
+}
+
+.st-key-suggestions .stButton > button,
+.st-key-suggestions [data-testid^="stBaseButton"] {
+  width: 100%;
+  justify-content: flex-start;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  min-height: 50px;
+  padding: 0.9rem 0.2rem;
+  font-size: 14.5px;
+  font-weight: 400;
+  color: var(--ink-2);
+  transition: color 0.15s ease, padding-left 0.15s ease, border-color 0.15s ease;
+}
+
+.st-key-suggestions .stButton > button p,
+.st-key-suggestions [data-testid^="stBaseButton"] p {
+  text-align: left;
+  font-size: 14.5px;
+  margin: 0;
+}
+
+.st-key-suggestions .stButton > button:hover,
+.st-key-suggestions [data-testid^="stBaseButton"]:hover {
+  background: transparent;
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  padding-left: 0.65rem;
+}
+
+/* ---------- 消息 ---------- */
+
+[data-testid="stChatMessage"] {
+  background: transparent;
+  border: none;
+  padding: 0.15rem 0 0.45rem;
+  gap: 0;
+}
+
+[data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessageAvatarAssistant"] {
+  display: none !important;
+}
+
+[data-testid="stChatMessage"] [data-testid="stChatMessageContent"] {
+  padding: 0;
+  border: none;
+  background: transparent;
+}
+
+/* 用户：把整条消息变成右对齐的弹性行，气泡自然贴右 */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+  display: flex !important;
+  flex-direction: row !important;
+  justify-content: flex-end !important;
+  align-items: flex-start !important;
+  width: 100%;
+}
+
+/* 用户：有边界的纸片，宽度跟着文字走 */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {
+  /* 关键：内容区默认被当成 flex item 拉伸，不关掉 grow 的话 width:fit-content 无效 */
+  flex: 0 1 auto !important;
+  align-self: flex-end;
+  width: fit-content !important;
+  max-width: 84%;
+  min-width: 2.5rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px 16px 5px 16px;
+  padding: 0.62rem 1rem;
+  margin-left: auto;
+  margin-right: 0;
+}
+
+/* 气泡内层还带着 Streamlit 默认的 margin / gap / min-height，
+   会把文字顶到偏上、下边留白。这里全部清零，让文字与内边距对称。 */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] > div,
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] [data-testid="stVerticalBlock"],
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] [data-testid="stMarkdownContainer"] {
+  margin: 0 !important;
+  padding: 0 !important;
+  gap: 0 !important;
+  min-height: 0 !important;
+}
+
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] p,
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] p:last-child {
+  margin: 0 !important;
+  padding: 0;
+  line-height: 1.65;
+}
+
+/* 多段输入时仍然要有段间距 */
+[data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] p + p {
+  margin-top: 0.55em !important;
+}
+
+[data-testid="stChatMessage"] p {
+  font-size: 15.3px;
+  line-height: 1.92;
+  color: var(--ink);
+  margin: 0 0 0.75em;
+}
+
+[data-testid="stChatMessage"] p:last-child {
+  margin-bottom: 0;
+}
+
+[data-testid="stChatMessage"] li {
+  font-size: 15.3px;
+  line-height: 1.85;
+  margin-bottom: 0.3em;
+}
+
+[data-testid="stChatMessage"] h1,
+[data-testid="stChatMessage"] h2,
+[data-testid="stChatMessage"] h3 {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin: 1.2em 0 0.5em;
+}
+
+[data-testid="stChatMessage"] blockquote {
+  border-left: 2px solid var(--line-strong);
+  color: var(--ink-2);
+  padding-left: 0.9rem;
+  margin: 0.6em 0;
+}
+
+[data-testid="stChatMessage"] code {
+  font-family: var(--mono);
+  background: var(--paper-2);
+  color: var(--ink);
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.88em;
+}
+
+[data-testid="stChatMessage"] hr {
+  border: none;
+  border-top: 1px solid var(--line);
+  margin: 1.2rem 0 0.8rem;
+}
+
+[data-testid="stChatMessage"] em {
+  color: var(--muted);
+  font-size: 12.5px;
+  font-style: normal;
+  line-height: 1.7;
+}
+
+.typing {
+  color: var(--muted);
+  font-size: 13.5px;
+  letter-spacing: 0.08em;
+}
+
+.error-inline {
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.redline-flag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-left: 3px solid var(--danger);
+  border-radius: 0 4px 4px 0;
+  padding: 0.3rem 0.7rem;
+  margin-bottom: 0.7rem;
+}
+
+/* ---------- 反馈：等宽小字，弱化到几乎不可见 ---------- */
+
+[class*="st-key-feedback-"] [data-testid="stVerticalBlock"] {
+  gap: 0;
+}
+
+[class*="st-key-feedback-"] .stButton > button,
+[class*="st-key-feedback-"] [data-testid^="stBaseButton"] {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
+  min-height: 28px;
+  padding: 0.15rem 0.1rem;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+[class*="st-key-feedback-"] .stButton > button:hover,
+[class*="st-key-feedback-"] [data-testid^="stBaseButton"]:hover {
+  background: transparent;
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ---------- 追问引导 ---------- */
+
+.followup-label {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 1rem 0 0.55rem;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+.followup-label::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--line);
+}
+
+[class*="st-key-followup-"] {
+  gap: 0.4rem;
+}
+
+[class*="st-key-followup-"] .stButton > button,
+[class*="st-key-followup-"] [data-testid^="stBaseButton"] {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  min-height: 34px;
+  padding: 0.2rem 0.95rem;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+[class*="st-key-followup-"] .stButton > button:hover,
+[class*="st-key-followup-"] [data-testid^="stBaseButton"]:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ---------- 输入区 ---------- */
+
+[data-testid="stBottom"] {
+  background: linear-gradient(180deg, rgba(251, 250, 246, 0) 0%, var(--paper) 42%);
+}
+
+[data-testid="stBottom"] > div {
+  background: transparent;
+}
+
+[data-testid="stBottomBlockContainer"] {
+  padding-top: 0.55rem;
+  padding-bottom: 0.75rem;
+}
+
+[data-testid="stChatInput"] {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  box-shadow: 0 10px 28px -22px rgba(27, 27, 24, 0.6);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  height: auto !important;
+}
+
+[data-testid="stChatInput"]:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 10px 28px -22px rgba(27, 27, 24, 0.6);
+}
+
+/* 内部布局：文字区与发送键始终同一行，盒子高度只跟文字行数走 */
+[data-testid="stChatInput"] > div {
+  height: auto !important;
+}
+
+[data-testid="stChatInput"] > div > div {
+  height: auto !important;
+  flex-direction: row !important;
+  align-items: flex-end !important;
+}
+
+[data-testid="stChatInput"] > div > div > div:first-child {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+
+[data-testid="stChatInput"] > div > div > div:last-child {
+  flex: 0 0 auto !important;
+  width: auto !important;
+}
+
+[data-testid="stChatInputTextArea"] {
+  width: 100% !important;
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink);
+  background: transparent;
+  max-height: 7.5em !important;
+  overflow-y: auto !important;
+  resize: none;
+}
+
+/* 空输入固定回一行：组件在「清空」后偶尔会保留多行高度 */
+[data-testid="stChatInput"]:has(textarea:placeholder-shown) [data-testid="stChatInputTextArea"] {
+  height: calc(1.8em + 8px) !important;
+}
+
+[data-testid="stChatInputTextArea"]::placeholder {
+  color: #A3A296;
+}
+
+[data-testid="stChatInput"] button {
+  background: var(--accent);
+  color: #fff;
+  border-radius: 10px;
+}
+
+[data-testid="stChatInput"] button:hover {
+  background: var(--accent-2);
+}
+
+/* ---------- 自定义输入区（文字 + 文件） ---------- */
+
+.st-key-composer {
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  padding: 0.45rem 0.6rem 0.12rem;
+  box-shadow: 0 12px 30px -26px rgba(27, 27, 24, 0.65);
+  gap: 0.35rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.st-key-composer:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft), 0 12px 30px -26px rgba(27, 27, 24, 0.65);
+}
+
+/* form 只借它的提交语义，不要边框和内边距 */
+.st-key-composer [data-testid="stForm"] {
+  border: 0 !important;
+  padding: 0 !important;
+  background: transparent;
+}
+
+/* Streamlit 给 markdown 容器留了负外边距，放进卡片里会把版权行顶出边框 */
+.st-key-composer [data-testid="stMarkdownContainer"] {
+  margin-bottom: 0 !important;
+}
+
+.st-key-composer [data-testid="stTextInput"],
+.st-key-composer [data-testid="stTextInputRootElement"] {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.st-key-composer [data-baseweb="input"] {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.st-key-composer [data-baseweb="base-input"] {
+  background: transparent !important;
+  padding-left: 0.2rem;
+}
+
+.st-key-composer input {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink);
+  caret-color: var(--accent);
+}
+
+.st-key-composer input::placeholder {
+  color: #A3A296;
+}
+
+/* 发送键：填充色、禁用变灰 */
+.st-key-composer [data-testid="stFormSubmitButton"] button,
+.st-key-composer button[data-testid$="FormSubmit"] {
+  min-height: 40px;
+  height: 40px;
+  margin: 0 !important;
+  padding: 0 0.9rem !important;
+  border: 0;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--accent);
+  color: #fff;
+  box-shadow: none;
+}
+
+/* 语音键 + 发送键：同一行、零间距，圆形麦克风紧贴发送键 */
+.st-key-send-group {
+  gap: 0 !important;
+  align-items: stretch;
+}
+
+.st-key-send-group > [data-testid="stElementContainer"]:has(.st-key-voice-slot) {
+  flex: 0 0 40px;
+  width: 40px;
+  min-width: 40px;
+}
+
+.st-key-voice-slot,
+.st-key-voice-slot > [data-testid="stElementContainer"] {
+  width: 40px;
+  height: 40px;
+}
+
+.st-key-voice-slot iframe {
+  display: block;
+  width: 40px !important;
+  height: 40px !important;
+  border: 0;
+}
+
+.st-key-send-group > [data-testid="stElementContainer"]:not(:has(.st-key-voice-slot)) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.st-key-composer [data-testid="stFormSubmitButton"] button:hover,
+.st-key-composer button[data-testid$="FormSubmit"]:hover {
+  background: var(--accent-2);
+  color: #fff;
+}
+
+.st-key-composer [data-testid="stFormSubmitButton"] button:disabled,
+.st-key-composer button[data-testid$="FormSubmit"]:disabled {
+  background: #DDD9CD !important;
+  color: #8E8A7C !important;
+  cursor: not-allowed !important;
+  opacity: 1;
+}
+
+/* 附件条 */
+.st-key-attachbar {
+  margin: 0;
+  gap: 0.5rem;
+}
+
+.st-key-attachbar button {
+  min-height: 28px;
+  padding: 0.1rem 0.55rem;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--ink-2);
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+}
+
+.st-key-attachbar button:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.attach-hint {
+  font-size: 11.5px;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+
+.attach-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: 26rem;
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--paper-2);
+}
+
+.attach-dot {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent-2);
+}
+
+.attach-chip.bad .attach-dot {
+  background: var(--danger);
+}
+
+.attach-name {
+  font-size: 12.5px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.attach-meta {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.attach-error {
+  font-size: 11.5px;
+  line-height: 1.7;
+  color: var(--danger);
+  padding: 0.1rem 0.2rem 0.3rem;
+}
+
+/* 上传面板 */
+.st-key-composer [data-testid="stFileUploaderDropzone"] {
+  padding: 0.7rem 0.8rem;
+  border: 1px dashed var(--line-strong);
+  border-radius: 12px;
+  background: var(--paper-2);
+}
+
+.st-key-composer [data-testid="stFileUploaderDropzone"]:hover {
+  border-color: var(--accent);
+}
+
+/* 上传器自带的英文按钮文字换成中文；大小限制在上面的提示里已经写了 */
+.st-key-composer [data-testid="stFileUploaderDropzone"] button {
+  min-height: 34px;
+  padding: 0.1rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.st-key-composer [data-testid="stFileUploaderDropzone"] button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.st-key-composer [data-testid="stFileUploaderDropzone"] button p {
+  font-size: 0;
+}
+
+.st-key-composer [data-testid="stFileUploaderDropzone"] button p::after {
+  content: "选择文件";
+  font-size: 13px;
+}
+
+.st-key-composer [data-testid="stFileUploaderDropzoneInstructions"] {
+  display: none;
+}
+
+/* 附件来源：从文件上传 / 直接拍照 */
+.st-key-composer [data-testid="stButtonGroup"] {
+  max-width: 20rem;
+}
+
+.st-key-composer [data-testid="stButtonGroup"] button {
+  min-height: 30px;
+  padding: 0.1rem 0.7rem;
+  font-size: 12.5px;
+}
+
+/* 拍照面板：预览限制宽度，别把整个底部输入区顶上去 */
+.st-key-attach-camera {
+  max-width: 18rem;
+}
+
+.st-key-attach-camera [data-testid="stCameraInputButton"] {
+  min-height: 34px;
+  padding: 0.1rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  /* 藏掉英文 Take Photo，用下面这行中文覆盖 */
+  font-size: 0;
+}
+
+.st-key-attach-camera [data-testid="stCameraInputButton"]:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.st-key-attach-camera [data-testid="stCameraInputButton"]::after {
+  content: "拍照";
+  font-size: 13px;
+}
+
+/* 摄像头权限提示也是英文的，换一句中文；「Learn how to allow access」链接一并藏掉 */
+.st-key-attach-camera [data-testid="stCameraInputWebcamComponent"] p {
+  font-size: 0;
+}
+
+.st-key-attach-camera [data-testid="stCameraInputWebcamComponent"] p a {
+  display: none;
+}
+
+.st-key-attach-camera [data-testid="stCameraInputWebcamComponent"] p::after {
+  content: "需要允许浏览器使用摄像头";
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.st-key-attach-camera video,
+.st-key-attach-camera img {
+  border-radius: 10px;
+}
+
+.st-key-composer .compliance {
+  padding: 0.05rem 0 0.18rem;
+  font-size: 10.5px;
+  line-height: 1.55;
+}
+
+
+.compliance {
+  font-size: 11px;
+  line-height: 1.8;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  text-align: center;
+  padding: 0.65rem 0 0.1rem;
+}
+
+/* ---------- 环境条（输入框上方的当地天气 / 空气质量） ---------- */
+
+.st-key-envbar {
+  margin: 0.1rem 0 0.45rem;
+  padding: 0.45rem 0 0.35rem;
+  border-top: 1px solid var(--line);
+}
+
+.envbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 12px;
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+  color: var(--ink-2);
+}
+
+.envbar-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-2);
+  flex: 0 0 auto;
+}
+
+.envbar-dot.warn {
+  background: #b8862b;
+}
+
+.envbar-dot.bad {
+  background: var(--danger);
+}
+
+.envbar-city {
+  color: var(--ink);
+}
+
+.envbar-value {
+  color: var(--muted);
+}
+
+.envbar-empty {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.env-note {
+  margin-top: 0.35rem;
+  font-size: 11px;
+  line-height: 1.7;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  opacity: 0.9;
+}
+
+/* ---------- 设置面板 ---------- */
+
+[data-testid="stPopoverBody"] {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 18px 40px -28px rgba(27, 27, 24, 0.55);
+  min-width: 13rem;
+  padding: 0.75rem 0.8rem;
+}
+
+[data-testid="stPopoverBody"] [data-testid="stVerticalBlock"] {
+  gap: 0.55rem;
+}
+
+/* 设置面板：比 Streamlit 默认紧一档，但每个控件之间留够呼吸 */
+.st-key-settings-panel {
+  gap: 0.5rem;
+}
+
+.st-key-settings-panel [data-testid="stCaptionContainer"] p {
+  margin: 0.12rem 0 0.08rem;
+  line-height: 1.65;
+}
+
+.st-key-settings-panel [data-testid="stWidgetLabel"] {
+  margin-bottom: 0.22rem;
+  min-height: 0;
+}
+
+/* st.divider() 落到 DOM 里就是 markdown 里的 <hr>，默认外边距偏大 */
+.st-key-settings-panel hr {
+  margin: 0.45rem 0;
+}
+
+[data-testid="stSlider"] label,
+[data-testid="stSelectbox"] label,
+[data-testid="stRadio"] label {
+  font-size: 12.5px;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+
+[data-testid="stSelectbox"] > div > div {
+  border-radius: 9px;
+  border-color: var(--line);
+  background: var(--surface);
+  font-size: 13.5px;
+}
+
+[data-testid="stPopoverBody"] .stButton > button {
+  min-height: 36px;
+  border-radius: 9px;
+  border-color: var(--line);
+  font-size: 13px;
+}
+
+[data-testid="stPopoverBody"] .stButton > button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+[data-testid="stExpander"] {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+/* ---------- 滚动条 ---------- */
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #D9D4C6;
+  border-radius: 99px;
+  border: 3px solid var(--paper);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--line-strong);
+}
+
+/* ---------- 自查表单 ---------- */
+
+[data-testid="stForm"] {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 1.1rem 1.3rem 1.2rem;
+}
+
+/* 分组标题：小字 + 发丝线，像体检单的栏目 */
+.form-section {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.3rem 0 0.15rem;
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+}
+
+.form-section::after {
+  content: "";
+  flex: 1 1 auto;
+  height: 1px;
+  background: var(--line);
+}
+
+/* 去掉数字框的加减按钮 */
+[data-testid="stNumberInput"] button {
+  display: none !important;
+}
+
+/* 输入框做成纸面样式 */
+[data-testid="stNumberInput"] [data-baseweb="input"],
+[data-testid="stTimeInput"] [data-baseweb="input"],
+[data-testid="stForm"] [data-baseweb="select"] > div {
+  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+[data-testid="stNumberInput"] [data-baseweb="input"]:focus-within,
+[data-testid="stTimeInput"] [data-baseweb="input"]:focus-within,
+[data-testid="stForm"] [data-baseweb="select"] > div:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+[data-testid="stNumberInput"] input,
+[data-testid="stTimeInput"] input {
+  font-family: var(--mono);
+  font-size: 14.5px;
+  color: var(--ink);
+  padding: 0.5rem 0.75rem;
+}
+
+[data-testid="stForm"] [data-baseweb="select"] > div {
+  font-size: 14px;
+  min-height: 42px;
+}
+
+[data-testid="stNumberInput"] [data-baseweb="input"] {
+  width: 100%;
+}
+
+[data-testid="stForm"] label p {
+  font-size: 12.5px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+/* 提交按钮：实心松绿，整行 */
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] button {
+  width: 100%;
+  min-height: 46px;
+  margin-top: 1.5rem;
+  background: var(--accent);
+  border: none;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  transition: background 0.15s ease;
+}
+
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover {
+  background: var(--accent-2);
+  color: #fff;
+}
+
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---------- 自查结果 ---------- */
+
+.check-banner {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  padding: 0.85rem 1.1rem;
+  margin: 1.5rem 0 1rem;
+  border-left: 2px solid var(--accent);
+  background: rgba(28, 91, 74, 0.05);
+}
+
+.check-banner.watch {
+  border-color: #8A5A00;
+  background: rgba(138, 90, 0, 0.06);
+}
+
+.check-banner.info {
+  border-color: var(--line-strong);
+  background: var(--paper-2);
+}
+
+.check-banner.alert,
+.check-banner.urgent {
+  border-color: var(--danger);
+  background: rgba(158, 53, 36, 0.06);
+}
+
+.check-banner-label {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  color: var(--muted);
+}
+
+.check-banner-value {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.check-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.3rem 0 1.2rem;
+}
+
+.check-table th {
+  text-align: left;
+  font-weight: 400;
+  font-size: 10.5px;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+  padding: 0.55rem 0.5rem;
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.check-table td {
+  padding: 0.62rem 0.5rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  color: var(--ink-2);
+  vertical-align: baseline;
+}
+
+.check-table td.num {
+  font-family: var(--mono);
+  color: var(--ink);
+}
+
+.check-table td.st {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.check-table td.st.ok { color: var(--accent); }
+.check-table td.st.watch,
+.check-table td.st.low { color: #8A5A00; }
+.check-table td.st.high,
+.check-table td.st.urgent { color: var(--danger); font-weight: 600; }
+
+[class*="st-key-check-conclusion"] p {
+  font-size: 15px;
+  line-height: 1.95;
+  color: var(--ink-2);
+  margin: 0 0 0.6em;
+}
+
+[class*="st-key-check-suggestions"] ol {
+  padding-left: 1.35rem;
+  margin: 0.2rem 0 1.3rem;
+}
+
+[class*="st-key-check-suggestions"] li {
+  font-size: 15px;
+  line-height: 1.9;
+  color: var(--ink-2);
+  margin-bottom: 0.45rem;
+}
+
+/* ---------- 工具箱 ---------- */
+
+/* 工具列表：两列卡片，整张卡片只提供「进入」一个动作 */
+.st-key-tool-grid {
+  margin-top: 0.35rem;
+}
+
+[class*="st-key-toolcard-"] {
+  transition: border-color 0.15s ease;
+}
+
+[class*="st-key-toolcard-"]:hover {
+  border-color: var(--accent) !important;
+}
+
+[class*="st-key-toolcard-"] .stButton > button {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 30px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  text-align: left;
+}
+
+[class*="st-key-toolcard-"] .stButton > button:hover {
+  background: transparent;
+  color: var(--accent);
+}
+
+[class*="st-key-toolcard-"] .stButton > button > div {
+  justify-content: flex-start !important;
+}
+
+[class*="st-key-toolcard-"] .stButton > button p {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-align: left;
+}
+
+[class*="st-key-toolcard-"] [data-testid="stCaptionContainer"] p {
+  margin: 0.2rem 0 0;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: var(--muted);
+}
+
+/* 工具页与各子界面的「← 返回」：一行小字，不抢内容 */
+.st-key-tool-back button,
+[class*="st-key-back-"] button {
+  min-height: 30px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+}
+
+.st-key-tool-back button:hover,
+[class*="st-key-back-"] button:hover {
+  color: var(--accent);
+  background: transparent;
+}
+
+[class*="st-key-back-"] {
+  margin: 0.1rem 0 0.15rem;
+}
+
+[class*="st-key-back-"] button p {
+  margin: 0;
+  font-size: 12.5px;
+}
+
+.hero.tool-hero {
+  margin-top: 1.3rem;
+}
+
+.tool-table td.tip {
+  font-size: 12.5px;
+  color: var(--muted);
+}
+
+.tool-table td.tip.ok { color: var(--accent); }
+.tool-table td.tip.watch,
+.tool-table td.tip.low { color: #8A5A00; }
+.tool-table td.tip.high { color: var(--danger); font-weight: 600; }
+
+.tool-advice {
+  padding-left: 1.35rem;
+  margin: 0.2rem 0 1.3rem;
+}
+
+.tool-advice li {
+  font-size: 14.5px;
+  line-height: 1.9;
+  color: var(--ink-2);
+  margin-bottom: 0.4rem;
+}
+
+/* ---------- 严重指标弹框 ---------- */
+
+[data-testid="stDialog"] {
+  background: var(--paper);
+}
+
+[data-testid="stDialog"] [data-testid="stMarkdownContainer"] p {
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--ink-2);
+}
+
+.urgent-alert {
+  border-left: 2px solid var(--danger);
+  background: rgba(158, 53, 36, 0.06);
+  padding: 0.9rem 1.1rem;
+  margin: 0.2rem 0 1.1rem;
+}
+
+.ua-eyebrow {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--danger);
+  margin-bottom: 0.55rem;
+}
+
+.ua-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.6rem;
+}
+
+.ua-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.55rem;
+  padding: 0.32rem 0;
+  border-bottom: 1px solid rgba(158, 53, 36, 0.14);
+}
+
+.ua-list li:last-child {
+  border-bottom: none;
+}
+
+.ua-name {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ua-value {
+  font-family: var(--mono);
+  font-size: 13.5px;
+  color: var(--danger);
+}
+
+.ua-ref {
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.ua-advice {
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ink-2);
+  margin: 0.45rem 0 0;
+}
+
+.ua-link {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent);
+}
+
+/* ---------- 就近医院 ---------- */
+
+.triage-note {
+  margin: 1rem 0 0.8rem;
+  padding: 0.8rem 1rem;
+  border-left: 2px solid var(--accent);
+  background: rgba(28, 91, 74, 0.05);
+}
+
+.triage-note.soon {
+  border-color: #8A5A00;
+  background: rgba(138, 90, 0, 0.06);
+}
+
+.triage-note.emergency {
+  border-color: var(--danger);
+  background: rgba(158, 53, 36, 0.06);
+}
+
+.triage-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.8rem;
+  margin-bottom: 0.3rem;
+}
+
+.triage-level {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.triage-note.soon .triage-level { color: #8A5A00; }
+.triage-note.emergency .triage-level { color: var(--danger); }
+
+.triage-dept {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.triage-advice {
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+.hospital-card {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.75rem 0.95rem;
+  margin-bottom: 0.55rem;
+  background: var(--surface);
+}
+
+.h-name {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.2rem;
+}
+
+.h-meta {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.h-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.45rem;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+
+.h-foot a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent);
+}
+
+/* ---------- 就诊流程 ---------- */
+
+.guide-ask {
+  margin: 1rem 0 0.5rem;
+  font-size: 13px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+}
+
+.guide-list {
+  list-style: none;
+  counter-reset: step;
+  padding: 0;
+  margin: 0.6rem 0 1.2rem;
+}
+
+.guide-list li {
+  position: relative;
+  padding-left: 2.5rem;
+  margin-bottom: 0.9rem;
+  counter-increment: step;
+}
+
+.guide-list li::before {
+  content: counter(step, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 0.15rem;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+
+.guide-title {
+  display: block;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 0.15rem;
+}
+
+.guide-detail {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ink-2);
+}
+
+/* ---------- 历史对话 ---------- */
+
+.hist-item {
+  border-bottom: 1px solid var(--line);
+  padding: 0.7rem 0.2rem;
+}
+
+.hist-title {
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 0.2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hist-meta {
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* ---------- 窄屏 ---------- */
+
+@media (max-width: 640px) {
+  [data-testid="stMainBlockContainer"] {
+    padding: 0.7rem 0.9rem 6.5rem;
+  }
+
+  .hero {
+    margin-top: 1.1rem;
+    padding-left: 0.9rem;
+  }
+
+  .hero-sub {
+    font-size: 13.5px;
+    line-height: 1.8;
+  }
+
+  .brand-name {
+    font-size: 16px;
+  }
+
+  .brand-role {
+    letter-spacing: 0.1em;
+  }
+
+  /* 工具结果表在窄屏收一收，长日期允许断行，避免横向溢出 */
+  .tool-table th,
+  .tool-table td {
+    padding: 0.5rem 0.35rem;
+  }
+
+  .tool-table td.num {
+    font-size: 12.5px;
+    overflow-wrap: anywhere;
+  }
+
+  .tool-table td.tip {
+    font-size: 11px;
+  }
+
+  [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {
+    max-width: 92%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- 登录 / 注册 ---------- */
+
+.auth-hero {
+  margin-top: 3rem;
+  margin-bottom: 1.5rem;
+}
+
+.auth-hero .hero-title {
+  font-size: 2.35rem;
+}
+
+.st-key-auth-card {
+  max-width: 430px;
+  margin: 0 auto;
+}
+
+.st-key-auth-card [data-testid="stForm"] {
+  padding: 1.15rem 1.2rem 1.2rem;
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.st-key-auth-card [data-testid="stForm"] [data-testid="stFormSubmitButton"] button {
+  margin-top: 1.1rem;
+}
+
+.st-key-auth-card .stTabs [data-baseweb="tab-list"] {
+  gap: 1.4rem;
+  padding: 0 0.15rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.st-key-auth-card .stTabs [data-baseweb="tab"] {
+  padding: 0.5rem 0;
+  font-family: var(--serif);
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.st-key-auth-card .stTabs [aria-selected="true"] {
+  color: var(--accent);
+}
+
+.st-key-auth-card .stTabs [data-baseweb="tab-highlight"] {
+  height: 2px;
+  background: var(--accent);
+}
+
+/* ---------- 打卡 / 数据看板 ---------- */
+
+.st-key-checkin-form,
+[class*="st-key-chart-card-"],
+.st-key-dash-report-card,
+.st-key-dash-empty {
+  margin-top: 0.55rem;
+}
+
+.st-key-checkin-form {
+  padding: 1.15rem 1.25rem 1.3rem;
+}
+
+/* 看板顶部指标卡：图标 + 标签 + 大数字 + 说明，四张一排 */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.7rem;
+  margin: 1.35rem 0 0.6rem;
+}
+
+.kpi {
+  padding: 0.85rem 0.95rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.kpi-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.kpi-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.kpi-icon.amber {
+  background: rgba(138, 90, 0, 0.1);
+  color: #8a5a00;
+}
+
+.kpi-icon.slate {
+  background: rgba(91, 107, 122, 0.13);
+  color: #5b6b7a;
+}
+
+.kpi-icon.rose {
+  background: rgba(158, 53, 36, 0.09);
+  color: var(--danger);
+}
+
+.kpi-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.kpi-value {
+  margin: 0.55rem 0 0.2rem;
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+}
+
+.kpi:first-child .kpi-value {
+  color: var(--accent);
+}
+
+.kpi-value-date {
+  font-size: 23px;
+}
+
+.kpi-unit {
+  margin-left: 0.25rem;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.kpi-foot {
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--muted);
+}
+
+/* 看板工具栏：标题 + 统计范围 + 生成报告 */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin: 0 0 0.15rem;
+}
+
+.section-title {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.section-sub {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* 每张趋势图：图标 + 指标名 + 单位，右侧筛选与图型切换 */
+.chart-head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.chart-head .kpi-icon {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+}
+
+.chart-title {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+}
+
+.chart-unit {
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+.chart-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0.55rem 0 0.15rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--line);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.chart-latest {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+
+[class*="st-key-chart-card-"] [data-testid="stPopoverButton"] {
+  min-height: 32px;
+  padding: 0 0.6rem;
+}
+
+[class*="st-key-chart-card-"] [data-testid="stPopoverButton"] p {
+  font-size: 11.5px;
+}
+
+[class*="st-key-chart-card-"] [data-testid="stButtonGroup"] {
+  justify-content: flex-end;
+}
+
+[class*="st-key-chart-card-"] [data-testid="stButtonGroup"] button {
+  min-height: 32px;
+  padding: 0 0.55rem;
+  font-size: 11.5px;
+}
+
+[class*="st-key-chart-card-"] [data-testid="stWidgetLabel"] p {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+[class*="st-key-chart-card-"] [data-testid="stSlider"] {
+  padding-bottom: 0;
+}
+
+/* 报告卡：头部和下载按钮同一行，内容沿用自查报告的表与横幅 */
+.st-key-dash-report-card .check-banner {
+  margin-top: 0.9rem;
+}
+
+.st-key-dash-report-card .check-table {
+  margin-bottom: 0.4rem;
+}
+
+.st-key-dash-empty {
+  padding: 1.1rem 1.2rem 1.2rem;
+}
+
+@media (max-width: 760px) {
+  .kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.55rem;
+  }
+
+  .kpi {
+    padding: 0.7rem 0.75rem 0.75rem;
+  }
+
+  .kpi-value {
+    font-size: 26px;
+  }
+
+  .kpi-value-date {
+    font-size: 20px;
+  }
+
+  .chart-meta {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
+
+.st-key-recent-checkins .hist-item {
+  padding: 0.45rem 0;
+}
+
+
+.st-key-auth-card .stTabs [data-baseweb="tab-border"] {
+  display: none;
+}
+
+/* ---------- 家庭组 ---------- */
+
+.family-card {
+  margin: 0.55rem 0 0.25rem;
+  padding: 0.85rem 1rem 0.9rem;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--line-strong);
+  background: var(--surface);
+}
+
+.family-name {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+}
+
+.family-meta {
+  margin-top: 3px;
+  font-size: 11.5px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.family-message {
+  margin-top: 0.45rem;
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.family-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+}
+
+.family-badge.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.family-badge.pending {
+  color: #7a5d13;
+  background: #f8f0d8;
+}
+
+.family-badge.rejected {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.family-notice {
+  margin: 0.9rem 0 0.4rem;
+  padding: 0.75rem 0.95rem;
+  border: 1px solid var(--line-strong);
+  border-left: 2px solid var(--accent);
+  background: var(--accent-soft);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.family-notice b {
+  color: var(--accent);
+}
+
+.proxy-banner {
+  margin: 0.55rem 0 0.2rem;
+  padding: 0.55rem 0.8rem;
+  border-left: 2px solid var(--accent);
+  background: var(--accent-soft);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.proxy-banner b {
+  color: var(--accent);
+}
+
+/* ---------- 家庭药箱 ---------- */
+
+.med-card {
+  padding: 0.1rem 0 0.2rem;
+}
+
+.med-card-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.med-name {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--ink);
+}
+
+.med-meta {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.med-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.1rem;
+  margin-top: 0.5rem;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.med-figures b {
+  font-family: var(--serif);
+  font-size: 15px;
+  color: var(--accent);
+}
+
+.med-note {
+  margin-top: 0.35rem;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.med-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: var(--paper-2);
+}
+
+.med-badge.plain {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.med-badge.warn {
+  color: #7a5d13;
+  background: #f8f0d8;
+}
+
+.med-badge.danger {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.med-alert {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem 0.6rem;
+  margin: 0.55rem 0 0.35rem;
+  padding: 0.65rem 0.85rem;
+  border-left: 2px solid var(--accent);
+  background: var(--accent-soft);
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--ink-2);
+}
+
+.med-alert.warn {
+  border-color: #8a5a00;
+  background: rgba(138, 90, 0, 0.06);
+}
+
+.med-alert.danger {
+  border-color: var(--danger);
+  background: rgba(158, 53, 36, 0.06);
+}
+
+.med-alert b {
+  color: var(--ink);
+}
+
+.med-alert-name {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.med-scan-box {
+  padding: 0.6rem 0.85rem;
+  border-left: 2px solid var(--accent);
+  background: var(--accent-soft);
+  font-size: 12.5px;
+  line-height: 1.75;
+  color: var(--ink-2);
+}
+
+@media (max-width: 640px) {
+  .family-card {
+    padding: 0.75rem 0.8rem 0.8rem;
+  }
+
+  .family-name {
+    font-size: 15px;
+  }
+}
+
+@media (max-width: 640px) {
+  .auth-hero {
+    margin-top: 1.6rem;
+  }
+}
+
+/* 窄屏下输入区会竖排：给底部留足够空间，别让最后一条消息被盖住 */
+@media (max-width: 640px) {
+  [data-testid="stMainBlockContainer"] {
+    padding-bottom: 12rem;
+  }
+
+  /* 底部条自带 3.5rem 下留白，手机上收掉，输入区才能贴到屏幕底部 */
+  [data-testid="stBottomBlockContainer"] {
+    padding-top: 0.5rem !important;
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* 手机上底部输入区整体压矮：默认 st.columns 在 640px 以下会把每列撑成
+     min-width:100% 竖排，输入框和发送键因此各占一行，白多出一整行高度。
+     这里让它们留在同一行，并把输入框、发送键、提示语各收一档。 */
+  .st-key-composer {
+    padding: 0.3rem 0.5rem 0.04rem;
+    gap: 0.15rem;
+    border-radius: 14px;
+  }
+
+  .st-key-composer [data-testid="stForm"] [data-testid="stHorizontalBlock"]:has([data-testid="stFormSubmitButton"]) [data-testid="stColumn"] {
+    min-width: 0 !important;
+    width: auto !important;
+  }
+
+  /* 左边的输入框吃掉剩余宽度，右边的发送键只占内容宽 */
+  .st-key-composer [data-testid="stForm"] [data-testid="stHorizontalBlock"]:has([data-testid="stFormSubmitButton"]) [data-testid="stColumn"]:first-child {
+    flex: 1 1 auto !important;
+  }
+
+  .st-key-composer [data-testid="stForm"] [data-testid="stHorizontalBlock"]:has([data-testid="stFormSubmitButton"]) [data-testid="stColumn"]:last-child {
+    flex: 0 0 auto !important;
+  }
+
+  /* 输入框：默认 2.5rem 起步，压到一行；老人模式在 theme_elder.css 里另有大尺寸 */
+  .st-key-composer [data-testid="stTextInputRootElement"],
+  .st-key-composer [data-baseweb="input"],
+  .st-key-composer [data-baseweb="base-input"] {
+    min-height: 36px;
+  }
+
+  .st-key-composer [data-baseweb="base-input"] {
+    padding: 0 0.15rem;
+    align-items: center;
+  }
+
+  /* iOS 上 16px 以下会触发聚焦缩放，正文保持 16px；占位文字单独收小 */
+  .st-key-composer input {
+    font-size: 16px;
+    height: 36px;
+    min-height: 36px;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 1.4;
+  }
+
+  .st-key-composer input::placeholder {
+    font-size: 13px;
+  }
+
+  /* 列是 bottom 对齐，Streamlit 会给每列最后一个元素补 0.5rem 下边距，这里去掉 */
+  .st-key-composer [data-testid="stForm"] [data-testid="stColumn"] > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"]:last-child > * {
+    margin-bottom: 0 !important;
+  }
+
+  /* 发送键跟输入框同高，宽度只占「发送」两个字 */
+  .st-key-composer [data-testid="stFormSubmitButton"] button,
+  .st-key-composer button[data-testid$="FormSubmit"] {
+    width: auto !important;
+    min-width: 4.2rem;
+    height: 36px;
+    min-height: 36px;
+    padding: 0 0.8rem !important;
+    font-size: 13.5px;
+  }
+
+  /* 附件条与两行小字也各收一档 */
+  .st-key-attachbar button {
+    min-height: 26px;
+    padding: 0.05rem 0.5rem;
+    font-size: 12px;
+  }
+
+  .st-key-composer .compliance {
+    padding: 0 0 0.08rem;
+    font-size: 10.5px;
+    line-height: 1.45;
+  }
+
+  .attach-hint {
+    font-size: 10.5px;
+    line-height: 1.45;
+  }
+
+  .attach-chip {
+    max-width: 100%;
+  }
+
+  .attach-name {
+    max-width: 12rem;
+  }
+
+  .st-key-attach-camera {
+    max-width: 100%;
+  }
+}

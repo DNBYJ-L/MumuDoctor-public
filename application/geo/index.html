@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body {
+    margin: 0; padding: 0; background: transparent; overflow: hidden;
+    font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  .row {
+    display: flex; align-items: center; gap: 9px; height: 40px;
+    font-size: 12.5px; color: #85857A; letter-spacing: .04em;
+  }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: #1C5B4A; animation: pulse 1.2s ease-in-out infinite;
+  }
+  .dot.ok { animation: none; background: #2F7A63; }
+  .dot.err { animation: none; background: #9E3524; }
+  button {
+    margin-left: 4px; height: 26px; padding: 0 11px;
+    border: 1px solid #CFC9B8; border-radius: 999px; background: #FFF;
+    color: #3E3E38; font-size: 12px; cursor: pointer; font-family: inherit;
+  }
+  button:hover { border-color: #1C5B4A; color: #1C5B4A; }
+  button:disabled { opacity: .5; cursor: default; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  @media (prefers-reduced-motion: reduce) { .dot { animation: none !important; } }
+</style>
+</head>
+<body>
+  <div class="row">
+    <span class="dot" id="dot"></span>
+    <span id="msg">正在获取定位…</span>
+    <button id="retry" type="button">重新定位</button>
+  </div>
+
+<script>
+  var dot = document.getElementById("dot");
+  var msg = document.getElementById("msg");
+  var retry = document.getElementById("retry");
+
+  function post(type, extra) {
+    var m = { isStreamlitMessage: true, type: type };
+    if (extra) { for (var k in extra) { m[k] = extra[k]; } }
+    window.parent.postMessage(m, "*");
+  }
+
+  post("streamlit:componentReady", { apiVersion: 1 });
+  post("streamlit:setFrameHeight", { height: 44 });
+
+  function fail(text, code) {
+    dot.className = "dot err";
+    msg.textContent = text;
+    retry.disabled = false;
+    post("streamlit:setComponentValue", {
+      value: { error: code || "unknown", ts: Date.now() },
+      dataType: "json"
+    });
+  }
+
+  function locate() {
+    retry.disabled = true;
+    dot.className = "dot";
+    msg.textContent = "正在获取定位…";
+
+    if (!navigator.geolocation) {
+      fail("浏览器不支持定位", "unsupported");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      function (pos) {
+        dot.className = "dot ok";
+        msg.textContent = "定位成功，正在检索附近医院…";
+        post("streamlit:setComponentValue", {
+          value: {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            acc: Math.round(pos.coords.accuracy || 0),
+            ts: Date.now()
+          },
+          dataType: "json"
+        });
+      },
+      function (err) {
+        var map = { 1: "定位权限被拒绝", 2: "定位不可用", 3: "定位超时" };
+        fail(map[err.code] || "定位失败", err.code);
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+    );
+  }
+
+  retry.addEventListener("click", locate);
+  locate();
+</script>
+</body>
+</html>

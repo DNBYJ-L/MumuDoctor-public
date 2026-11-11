@@ -1,0 +1,410 @@
+/* ============================================================
+   MumuDoctor · 外壳
+   左侧固定导航 + 页面标题 + 窄内容列。
+   只借骨架（导航分组、页面标题、内容宽度），配色与字体仍走
+   theme.css 的纸与墨：纸底、白侧栏、发丝线、松绿高亮。
+   ============================================================ */
+
+/* 默认（移动端）：桌面元素全部收起 */
+.only-desktop {
+  display: none !important;
+}
+
+.st-key-shell-nav {
+  display: none;
+}
+
+/* 顶栏里的容器默认按 1fr 拉伸，头像位会被撑成一条空白，固定成内容宽 */
+.st-key-topbar > div[data-testid="stLayoutWrapper"]:has(.st-key-topbar-avatar) {
+  flex: 0 0 auto !important;
+  width: fit-content !important;
+}
+
+/* ---------- 桌面端 ---------- */
+
+@media (min-width: 900px) {
+  /* 内容整体右移，给固定侧栏让位 */
+  [data-testid="stMain"] {
+    padding-left: 232px;
+  }
+
+  [data-testid="stMainBlockContainer"] {
+    max-width: 840px;
+    padding: 0.9rem 1.6rem 9rem;
+  }
+
+  /* 底部输入条在 stMain 内部（sticky），已经跟着 padding-left 右移，这里只收窄 */
+  [data-testid="stBottomBlockContainer"] {
+    max-width: 840px;
+    margin: 0 auto;
+  }
+
+  /* 顶栏：桌面端只留标题 + 操作。
+     隐藏要落在 stLayoutWrapper 上，只藏里面的块，外层仍会占一条 245px 的空位。 */
+  .st-key-topbar > div[data-testid="stLayoutWrapper"]:has(.st-key-topbar-avatar),
+  .st-key-topbar div[data-testid="stElementContainer"]:has(.brand) {
+    display: none !important;
+  }
+
+  .only-desktop {
+    display: flex !important;
+  }
+
+  .st-key-topbar div[data-testid="stElementContainer"]:has(.page-title) {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .st-key-topbar > div[data-testid="stLayoutWrapper"]:has(.st-key-topbar-new) {
+    flex: 0 0 auto !important;
+    width: fit-content !important;
+  }
+
+  .st-key-shell-nav {
+    display: flex !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 232px;
+    padding: 1.15rem 0.8rem 1rem;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    z-index: 999;
+    flex-direction: column;
+    gap: 0.1rem;
+    overflow-y: auto;
+  }
+}
+
+/* ---------- 侧栏 ---------- */
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.1rem 0.45rem 0.85rem;
+}
+
+.nav-mark {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--accent);
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.nav-brand-text {
+  min-width: 0;
+}
+
+.nav-brand-name {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.nav-brand-role {
+  margin-top: 2px;
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nav-group {
+  /* 下内边距要够：胶囊比它的容器略高一点，贴太近会压住分组字样 */
+  padding: 1.05rem 0.55rem 0.5rem;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* Streamlit 给 markdown 容器加了 margin-bottom:-1rem 来抵消段间距；
+   这里把内边距算进高度，否则负边距会把下面的胶囊拉上来盖住分组字样。 */
+.st-key-shell-nav div[data-testid="stElementContainer"]:has(.nav-group) [data-testid="stMarkdownContainer"] {
+  margin-bottom: 0 !important;
+}
+
+.nav-foot {
+  margin-top: auto;
+  padding: 0.9rem 0.55rem 0.1rem;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* margin-top:auto 要落在 flex 子项上，markdown 外面还包了两层 */
+.st-key-shell-nav div[data-testid="stElementContainer"]:has(.nav-foot) {
+  margin-top: auto;
+}
+
+/* 导航按钮：整行、左对齐、图标 + 文字 */
+.st-key-shell-nav .stButton > button,
+.st-key-shell-nav [data-testid^="stBaseButton"] {
+  width: 100%;
+  justify-content: flex-start !important;
+  min-height: 36px;
+  padding: 0 0.55rem;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 13.5px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.st-key-shell-nav [data-testid^="stBaseButton"] > div {
+  justify-content: flex-start !important;
+  gap: 0.5rem;
+}
+
+.st-key-shell-nav .stButton > button p,
+.st-key-shell-nav [data-testid^="stBaseButton"] p {
+  margin: 0;
+  font-size: 13.5px;
+  text-align: left;
+}
+
+.st-key-shell-nav [data-testid="stIconMaterial"] {
+  font-size: 18px;
+  color: var(--muted);
+  transition: color 0.15s ease;
+}
+
+.st-key-shell-nav .stButton > button:hover,
+.st-key-shell-nav [data-testid^="stBaseButton"]:hover {
+  background: var(--paper-2);
+  color: var(--ink);
+}
+
+.st-key-shell-nav .stButton > button:hover [data-testid="stIconMaterial"],
+.st-key-shell-nav [data-testid^="stBaseButton"]:hover [data-testid="stIconMaterial"] {
+  color: var(--ink);
+}
+
+/* 选中项：浅松绿底 + 松绿字，和弹窗菜单保持一致 */
+.st-key-shell-nav [data-testid="stBaseButton-primary"] {
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+}
+
+.st-key-shell-nav [data-testid="stBaseButton-primary"] p {
+  color: var(--accent) !important;
+  font-weight: 500;
+}
+
+.st-key-shell-nav [data-testid="stBaseButton-primary"] [data-testid="stIconMaterial"] {
+  color: var(--accent) !important;
+}
+
+/* ---------- 移动端导航抽屉 ---------- */
+
+.st-key-mobile-nav-toggle,
+.st-key-mobile-nav {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .st-key-mobile-nav-toggle {
+    display: block;
+    flex: 0 0 auto;
+  }
+
+  .st-key-mobile-nav-toggle .stButton > button {
+    min-height: 32px;
+    padding: 0 0.55rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+  }
+
+  .st-key-mobile-nav-toggle .stButton > button p {
+    margin: 0;
+    font-size: 12.5px;
+  }
+
+  .st-key-mobile-nav {
+    display: flex;
+    position: fixed;
+    top: 64px; /* 从顶栏下方展开，顶栏的「☰ / ✕」按钮始终可点 */
+    left: 0;
+    bottom: 0;
+    width: min(84vw, 320px);
+    padding: 1rem 0.9rem 1rem;
+    background: var(--surface);
+    border-right: 1px solid var(--line);
+    box-shadow: 18px 0 48px rgba(27, 27, 24, 0.16);
+    z-index: 1000;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  /* 抽屉里的导航按钮沿用桌面侧栏的排版 */
+  .st-key-mobile-nav .stButton > button,
+  .st-key-mobile-nav [data-testid^="stBaseButton"] {
+    width: 100%;
+    justify-content: flex-start !important;
+    min-height: 38px;
+    padding: 0 0.55rem;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ink-2);
+    font-size: 14px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    text-align: left;
+  }
+
+  .st-key-mobile-nav [data-testid^="stBaseButton"] > div {
+    justify-content: flex-start !important;
+    gap: 0.5rem;
+  }
+
+  .st-key-mobile-nav .stButton > button p,
+  .st-key-mobile-nav [data-testid^="stBaseButton"] p {
+    margin: 0;
+    font-size: 14px;
+    text-align: left;
+  }
+
+  .st-key-mobile-nav [data-testid="stIconMaterial"] {
+    font-size: 18px;
+    color: var(--muted);
+  }
+
+  .st-key-mobile-nav .stButton > button:hover,
+  .st-key-mobile-nav [data-testid^="stBaseButton"]:hover {
+    background: var(--paper-2);
+    color: var(--ink);
+  }
+
+  .st-key-mobile-nav [data-testid="stBaseButton-primary"] {
+    background: var(--accent-soft) !important;
+    color: var(--accent) !important;
+  }
+
+  .st-key-mobile-nav [data-testid="stBaseButton-primary"] p,
+  .st-key-mobile-nav [data-testid="stBaseButton-primary"] [data-testid="stIconMaterial"] {
+    color: var(--accent) !important;
+  }
+
+  .st-key-mobile-nav div[data-testid="stElementContainer"]:has(.nav-group) [data-testid="stMarkdownContainer"] {
+    margin-bottom: 0 !important;
+  }
+
+  .st-key-mobile-nav div[data-testid="stElementContainer"]:has(.nav-foot) {
+    margin-top: auto;
+  }
+
+  /* 抽屉右上角的「收起」只占内容宽，不跟导航项一样拉满 */
+  .st-key-mobile-nav-close .stButton > button {
+    width: auto;
+    min-height: 30px;
+    margin-left: auto;
+    padding: 0 0.5rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+  }
+
+  .st-key-mobile-nav-close .stButton > button p {
+    margin: 0;
+    font-size: 12px;
+  }
+}
+
+/* ---------- 顶栏 ---------- */
+
+.brand.only-mobile {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.page-title {
+  align-items: baseline;
+  gap: 0.6rem;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.page-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+}
+
+/* 顶栏右侧的「新对话」：低调、和「设置」同高 */
+.st-key-topbar-new .stButton > button {
+  min-height: 32px;
+  padding: 0 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-2);
+  font-size: 12.5px;
+  letter-spacing: 0.05em;
+}
+
+.st-key-topbar-new .stButton > button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.st-key-topbar-new .stButton > button p {
+  font-size: 12.5px;
+  margin: 0;
+}
+
+/* ---------- 移动端 ---------- */
+
+@media (max-width: 899px) {
+  .st-key-shell-nav,
+  .st-key-topbar > div[data-testid="stLayoutWrapper"]:has(.st-key-topbar-new) {
+    display: none !important;
+  }
+
+  .st-key-topbar > div[data-testid="stElementContainer"]:has(.page-title) {
+    display: none !important;
+  }
+
+  .only-mobile {
+    display: flex;
+  }
+}

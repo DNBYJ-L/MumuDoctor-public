@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body {
+    margin: 0; padding: 0; background: transparent; overflow: hidden;
+    font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  .card {
+    border: 1px solid #E5E1D5; border-radius: 12px;
+    padding: 12px 15px; margin-bottom: 9px; background: #FFFFFF;
+  }
+  .name { font-size: 14.5px; font-weight: 600; color: #1B1B18; margin-bottom: 3px; }
+  .meta { font-size: 12.5px; color: #85857A; line-height: 1.6; }
+  .foot {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 8px; font-size: 12.5px; color: #3E3E38;
+  }
+  .tel { font-variant-numeric: tabular-nums; }
+  .nav {
+    border: 1px solid #CFC9B8; background: #FFFFFF; color: #1C5B4A;
+    border-radius: 999px; padding: 4px 14px; font-size: 12.5px;
+    cursor: pointer; font-family: inherit;
+  }
+  .nav:hover { background: #EAF1EC; border-color: #1C5B4A; }
+  .nav:active { background: #1C5B4A; color: #FFFFFF; }
+  .card.clickable { cursor: pointer; }
+  .card.clickable:hover { border-color: #1C5B4A; }
+  .empty { font-size: 13px; color: #85857A; }
+</style>
+</head>
+<body>
+  <div id="list"></div>
+
+<script>
+  function post(type, extra) {
+    var m = { isStreamlitMessage: true, type: type };
+    if (extra) { for (var k in extra) { m[k] = extra[k]; } }
+    window.parent.postMessage(m, "*");
+  }
+  post("streamlit:componentReady", { apiVersion: 1 });
+  post("streamlit:setFrameHeight", { height: 40 });
+
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  var ua = navigator.userAgent || "";
+  var isIOS = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var isAndroid = /Android/.test(ua);
+
+  function webUrl(it) {
+    return "https://uri.amap.com/marker?position=" + it.lng + "," + it.lat +
+           "&name=" + encodeURIComponent(it.name) + "&callnative=1";
+  }
+
+  function schemeUrl(it) {
+    var q = "?sourceApplication=MumuDoctor&dlat=" + it.lat + "&dlon=" + it.lng +
+            "&dname=" + encodeURIComponent(it.name) + "&dev=0&t=0&callnative=1";
+    if (isIOS) return "iosamap://path" + q;
+    if (isAndroid) return "androidamap://route/plan/" + q;
+    return "";
+  }
+
+  // 尝试唤起 App：1.2 秒内页面若被切走，说明 App 打开了；否则回退网页
+  function navigate(it) {
+    var web = webUrl(it);
+    var scheme = schemeUrl(it);
+    if (!scheme) { window.open(web, "_blank"); return; }
+
+    var left = false;
+    var onHide = function () { left = true; };
+    document.addEventListener("visibilitychange", onHide, { once: true });
+    window.addEventListener("blur", onHide, { once: true });
+
+    var fallback = setTimeout(function () {
+      if (!left && !document.hidden) { window.location.href = web; }
+    }, 1200);
+
+    window.location.href = scheme;
+
+    setTimeout(function () {
+      clearTimeout(fallback);
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("blur", onHide);
+    }, 2500);
+  }
+
+  function render(items, clickable) {
+    var root = document.getElementById("list");
+    root.innerHTML = "";
+    if (!items || !items.length) {
+      root.innerHTML = '<div class="empty">没有可展示的医院。</div>';
+    } else {
+      items.forEach(function (it) {
+        var card = document.createElement("div");
+        card.className = "card";
+        var dist = it.distance ? it.distance + " 米" : "";
+        card.innerHTML =
+          '<div class="name">' + esc(it.name) + "</div>" +
+          '<div class="meta">' + esc(dist) + "　" + esc(it.address) + "</div>" +
+          '<div class="foot"><span class="tel">' + esc(it.tel || "") + "</span>" +
+          '<button class="nav" type="button">导航 ›</button></div>';
+        card.querySelector(".nav").addEventListener("click", function (e) {
+          e.stopPropagation();
+          navigate(it);
+        });
+        if (clickable) {
+          card.classList.add("clickable");
+          card.addEventListener("click", function () { navigate(it); });
+        }
+        root.appendChild(card);
+      });
+    }
+    requestAnimationFrame(function () {
+      post("streamlit:setFrameHeight", { height: Math.ceil(root.getBoundingClientRect().height) + 6 });
+    });
+  }
+
+  window.addEventListener("message", function (e) {
+    var d = e.data;
+    if (!d || d.type !== "streamlit:render") return;
+    var args = d.args || {};
+    render(args.items || [], !!args.card_click);
+  });
+</script>
+</body>
+</html>

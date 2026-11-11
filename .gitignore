@@ -1,0 +1,20 @@
+.idea
+.DS_Store
+.venv/
+__pycache__/
+*.pyc
+*.bak
+*.bak.*
+.tmp/
+.tmp2/
+audit/
+.env
+.env.*
+.streamlit/secrets.toml
+
+# 运行时数据与凭据
+data/history/
+data/feedback/*.jsonl
+data/knowledge/documents.json
+data/knowledge/embeddings.npy
+device_bridge/
