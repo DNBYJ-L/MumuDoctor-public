@@ -1022,6 +1022,11 @@ def close_device_bind_dialog() -> None:
     """设备绑定弹窗关闭：清掉开关和半截的配置，下次重新来。"""
     st.session_state[DEVICE_BIND_KEY] = False
     st.session_state.pop(DEVICE_BIND_PAYLOAD_KEY, None)
+    for key in ("bind-mode", "bind-paste", "bind-token", "bind-cuser", "bind-uid"):
+        try:
+            st.session_state.pop(key, None)
+        except Exception:
+            pass
 
 
 def inject_styles(elder: bool = False) -> None:
@@ -4675,27 +4680,99 @@ class MumuDoctorApp:
 
     @st.dialog("绑定设备账号", width="large", on_dismiss=close_device_bind_dialog)
     def render_device_bind_dialog(self) -> None:
-        """站内绑定：上传 config.json 或手填 passToken，校验后立刻起一次同步。"""
+        """站内绑定：上传桥接工具生成的 config.json，或手填 / 粘贴 passToken。
+
+        两种方式都收敛成同一份待绑定字段（DEVICE_BIND_PAYLOAD_KEY），
+        确认后写 accounts/<站点账号>/config.json 并起一次同步。
+        """
         user = current_user()
         if not user:
             return
         account = str(user["account"])
         st.caption(f"绑定后，手表数据会记在「{account}」名下，每天自动同步。")
 
-        with st.expander("怎么拿到登录态？", expanded=False):
+        with st.expander("有桥接工具？也可以直接传 config.json", expanded=False):
             st.markdown(
                 """
-                1. 在电脑上打开桥接工具的本地看板（默认 `http://127.0.0.1:8567`），
-                   用要绑定的**小米账号**登录一次（会过短信 / 邮箱验证）；
-                2. 打开 `mihealth-api` 目录下的 `config.json`，整份传到下面；
-                3. 也可以只复制里面的 `pass_token` 和 `cuser_id` 手填。
+                1. 打开电脑上的 `http://127.0.0.1:8567`，用要绑定的小米账号登录一次；
+                2. 打开 `mihealth-api` 目录下的 `config.json`，整份传到「上传 config.json」；
+                3. 没有 8567 也没关系：手填 `passToken` 的教程就在「手填 passToken」页里。
                 """
             )
 
         payload = st.session_state.get(DEVICE_BIND_PAYLOAD_KEY) or {}
 
-        tab_upload, tab_manual = st.tabs(["上传 config.json", "手填 passToken"])
-        with tab_upload:
+        # 用分段控件而不是 st.tabs：tabs 的选中状态不进 session_state，任何一次
+        # rerun 都会跳回第一个页签，看起来像"没反应"。
+        modes = ["手填 passToken", "上传 config.json"]
+        if st.session_state.get("bind-mode") not in modes:
+            st.session_state["bind-mode"] = modes[0]
+        mode = st.segmented_control(
+            "绑定方式",
+            modes,
+            key="bind-mode",
+            required=True,
+            label_visibility="collapsed",
+            width="stretch",
+        )
+        if mode == modes[0]:
+            with st.expander("怎么拿到 passToken（不用 8567）", expanded=False):
+                st.markdown(
+                    """
+**用电脑上的 Chrome / Edge**
+
+1. 打开 https://account.xiaomi.com 并登录（验证码 / 短信走你自己的网络和 IP，
+   一般不会像服务器那样被风控卡住）；
+2. 按 `F12` → **Network / 网络**，勾上 *Preserve log*（保留日志），再登录一次；
+3. 在请求列表里找 `serviceLoginAuth2`（过滤框搜 `serviceLogin` 也能找到）→
+   点开 **Response / 响应** → 全选复制整段 JSON，里面有
+   `"passToken":"..."`、`"cUserId":"..."`、`"userId":"..."`。
+
+**已经登录着、不想再登一次**：`F12` → **Application / 应用** →
+Cookies → `https://account.xiaomi.com`，复制 `passToken` 和 `cUserId` 两个值即可。
+
+把复制到的内容粘到下面，点「从粘贴内容换票」——整段 JSON 或
+`passToken=...; cUserId=...` 都能识别，不用自己拆字段。
+
+> `passToken` 是 HttpOnly，浏览器控制台里 `document.cookie` 读不到它，
+> 必须用 DevTools 的 Network 或 Application 面板。
+"""
+                )
+            st.caption(
+                "从浏览器复制来的整段 JSON / Cookie 也行：贴进来点一下就自动找字段。"
+            )
+            pasted = st.text_area(
+                "粘贴 passToken / cUserId（或整段响应 JSON / Cookie 串）",
+                key="bind-paste",
+                height=90,
+                placeholder='例如 {"passToken":"...","cUserId":"...","userId":"..."}'
+                " 或 passToken=...; cUserId=...",
+            )
+            if st.button(
+                "从粘贴内容换票", key="bind-paste-ok", type="primary", width="stretch"
+            ):
+                try:
+                    parsed = device_bind.parse_pasted_credentials(pasted)
+                except device_bind.BindError as exc:
+                    st.error(str(exc))
+                else:
+                    st.session_state[DEVICE_BIND_PAYLOAD_KEY] = parsed
+                    st.success("凭据有效，可以绑定了。")
+                    st.rerun()
+            st.divider()
+            token = st.text_input("passToken", type="password", key="bind-token")
+            cuser = st.text_input("cUserId", key="bind-cuser")
+            uid = st.text_input("userId（可留空）", key="bind-uid")
+            if st.button("用 passToken 换票", key="bind-manual", width="stretch"):
+                try:
+                    parsed = device_bind.parse_manual(token, cuser, uid)
+                except device_bind.BindError as exc:
+                    st.error(str(exc))
+                else:
+                    st.session_state[DEVICE_BIND_PAYLOAD_KEY] = parsed
+                    st.success("凭据有效，可以绑定了。")
+                    st.rerun()
+        else:
             file = st.file_uploader("选择 config.json", type=("json",), key="bind-file")
             if file is not None:
                 try:
@@ -4709,19 +4786,6 @@ class MumuDoctorApp:
                         st.session_state[DEVICE_BIND_PAYLOAD_KEY] = parsed
                         payload = parsed
                     st.success("已读取配置：" + "、".join(sorted(parsed)))
-        with tab_manual:
-            token = st.text_input("passToken", type="password", key="bind-token")
-            cuser = st.text_input("cUserId", key="bind-cuser")
-            uid = st.text_input("userId（可留空）", key="bind-uid")
-            if st.button("用 passToken 换票", key="bind-manual", width="stretch"):
-                try:
-                    parsed = device_bind.parse_manual(token, cuser, uid)
-                except device_bind.BindError as exc:
-                    st.error(str(exc))
-                else:
-                    st.session_state[DEVICE_BIND_PAYLOAD_KEY] = parsed
-                    st.success("凭据有效，可以绑定了。")
-                    st.rerun()
 
         if payload:
             st.caption("待绑定字段：" + "、".join(sorted(payload)))

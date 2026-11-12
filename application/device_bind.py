@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -69,6 +70,58 @@ def _clean(payload: Dict) -> Dict:
     out.setdefault("sid", "miothealth")
     out.setdefault("region", "cn")
     return out
+
+
+_PASS_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(?:passToken|pass_token)\s*[\"']?\s*[:=]\s*[\"']?([^\"'&;,\s}]+)",
+    re.I,
+)
+_CUSER_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(?:cUserId|cuser_id)\s*[\"']?\s*[:=]\s*[\"']?([^\"'&;,\s}]+)",
+    re.I,
+)
+_USER_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(?:userId|user_id)\s*[\"']?\s*[:=]\s*[\"']?(\d{1,20})", re.I
+)
+
+
+def extract_credentials(text: str) -> Dict:
+    """从 Cookie 串 / DevTools 响应 JSON / config.json 片段里抠出 passToken 和 cUserId。
+
+    浏览器登录小米账号后，passToken 通常是 HttpOnly 的，document.cookie 读不到；
+    所以最常见的来源是 DevTools 里 serviceLoginAuth2 的响应 JSON，或者
+    Application → Cookies 里复制出来的一整串。这里对两种格式都做兼容。
+    """
+    from urllib.parse import unquote
+
+    text = text or ""
+    found: Dict[str, str] = {}
+    for key, pattern in (
+        ("pass_token", _PASS_RE),
+        ("cuser_id", _CUSER_RE),
+        ("user_id", _USER_RE),
+    ):
+        match = pattern.search(text)
+        if not match:
+            continue
+        value = match.group(1).strip().strip("\"'")
+        if "%" in value:
+            value = unquote(value)
+        found[key] = value
+    return found
+
+
+def parse_pasted_credentials(text: str) -> Dict:
+    """把用户粘贴的内容变成可换票的字段；优先用粘贴里的值。"""
+    found = extract_credentials(text)
+    if not found.get("pass_token"):
+        raise BindError(
+            "没从粘贴内容里找到 passToken；请复制 passToken 那一整段，"
+            "或直接在上面的输入框手填。"
+        )
+    if not found.get("cuser_id"):
+        raise BindError("找到了 passToken，但没找到 cUserId；请把两者一起粘贴，或手填 cUserId。")
+    return parse_manual(found["pass_token"], found["cuser_id"], found.get("user_id", ""))
 
 
 def parse_config_text(text: str) -> Dict:
